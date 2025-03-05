@@ -1,0 +1,1 @@
+searchState.loadedDescShard("docs", 0, "Fast and easy use docker to create a container")
