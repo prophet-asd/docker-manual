@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Column","ColumnDataType"],"struct":["ColumnDataDescription","ColumnDescription","ColumnIterator","ConcreteColumnDescription"],"trait":["DescribesColumnLocation","FitsRow","ReadsCol","WritesCol"]};

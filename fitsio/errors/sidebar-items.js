@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error"],"fn":["check_status"],"struct":["FitsError","IndexError"],"type":["Result"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["FileOpenMode"],"fn":["cfitsio_version"],"mod":["errors","hdu","headers","images","tables","threadsafe_fitsfile"],"struct":["CfitsioVersion","FitsFile"]};

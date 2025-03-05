@@ -1,0 +1,513 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="`fitsio` - a thin wrapper around the `cfitsio` C library."><title>fitsio - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-492a78a4a87dcc01.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="fitsio" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0 (f6e511eec 2024-10-15)" data-channel="1.82.0" data-search-js="search-a99f1315e7cc5121.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-921df33f47b8780c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../fitsio/index.html">fitsio</a><span class="version">0.21.7</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#functions">Functions</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">fitsio</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/fitsio/lib.rs.html#1-1077">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p><code>fitsio</code> - a thin wrapper around the <a href="http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html"><code>cfitsio</code></a> C library.</p>
+<ul>
+<li><a href="#file-access">File access</a>
+<ul>
+<li><a href="#pretty-printing">Pretty printing</a></li>
+</ul>
+</li>
+<li><a href="#hdu-access">HDU access</a></li>
+<li><a href="#creating-new-hdus">Creating new HDUs</a>
+<ul>
+<li><a href="#creating-a-new-image">Creating a new image</a></li>
+<li><a href="#creating-a-new-table">Creating a new table</a>
+<ul>
+<li><a href="#column-descriptions">Column descriptions</a></li>
+</ul>
+</li>
+<li><a href="#copying-hdus-to-another-file">Copying HDUs to another file</a></li>
+<li><a href="#deleting-a-hdu">Deleting a HDU</a></li>
+<li><a href="#iterating-over-the-hdus-in-a-file">Iterating over the HDUs in a file</a></li>
+<li><a href="#general-calling-behaviour">General calling behaviour</a></li>
+</ul>
+</li>
+<li><a href="#header-keys">Header keys</a></li>
+<li><a href="#reading-file-data">Reading file data</a>
+<ul>
+<li><a href="#reading-images">Reading images</a>
+<ul>
+<li><a href="#ndarray-support"><code>ndarray</code> support</a></li>
+</ul>
+</li>
+<li><a href="#reading-tables">Reading tables</a>
+<ul>
+<li><a href="#reading-cell-values">Reading cell values</a></li>
+<li><a href="#reading-rows">Reading rows</a></li>
+</ul>
+</li>
+<li><a href="#iterating-over-columns">Iterating over columns</a></li>
+</ul>
+</li>
+<li><a href="#writing-file-data">Writing file data</a>
+<ul>
+<li><a href="#writing-images">Writing images</a>
+<ul>
+<li><a href="#resizing-an-image">Resizing an image</a></li>
+</ul>
+</li>
+<li><a href="#writing-tables">Writing tables</a>
+<ul>
+<li><a href="#writing-table-data">Writing table data</a></li>
+<li><a href="#inserting-columns">Inserting columns</a></li>
+<li><a href="#deleting-columns">Deleting columns</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#raw-fits-file-access">Raw fits file access</a></li>
+<li><a href="#threadsafe-access">Threadsafe access</a></li>
+</ul>
+<p>This library wraps the low level <code>cfitsio</code> bindings: <a href="https://crates.io/crates/fitsio-sys"><code>fitsio-sys</code></a> and provides a more
+native experience for rust users.</p>
+<p>The main interface to a fits file is <a href="fitsfile/struct.FitsFile.html"><code>FitsFile</code></a>. All file manipulation
+and reading starts with this class.</p>
+<h2 id="file-access"><a class="doc-anchor" href="#file-access">§</a>File access</h2>
+<p>To open an existing file, use the <a href="fitsfile/struct.FitsFile.html#method.open">open</a> method.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::FitsFile;
+
+<span class="comment">// let filename = ...;
+</span><span class="kw">let </span>fptr = FitsFile::open(filename)<span class="question-mark">?</span>;</code></pre></div>
+<p>Alternatively a new file can be created on disk with the companion method
+<a href="fitsfile/struct.FitsFile.html#method.create"><code>create</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::FitsFile;
+
+<span class="comment">// let filename = ...;
+</span><span class="kw">let </span>fptr = FitsFile::create(filename).open()<span class="question-mark">?</span>;</code></pre></div>
+<p>The <a href="fitsfile/struct.FitsFile.html#method.create"><code>create</code></a> method returns a <a href="fitsfile/struct.NewFitsFile.html"><code>NewFitsFile</code></a>, which is an
+internal representation of a temporary fits file on disk, before the file is fully created.</p>
+<p>This representation has two methods: <a href="fitsfile/struct.NewFitsFile.html#method.open"><code>open</code></a> and
+<a href="fitsfile/struct.NewFitsFile.html#method.with_custom_primary"><code>with_custom_primary</code></a>. The <a href="fitsfile/struct.NewFitsFile.html#method.open"><code>open</code></a>
+method actually creates the file on disk, but before calling this method, the
+<a href="fitsfile/struct.NewFitsFile.html#method.with_custom_primary"><code>with_custom_primary</code></a> method can be used to add a custom
+primary HDU. This is mostly useful for images. Otherwise, a default primary HDU is created.  An
+example of not adding a custom primary HDU is shown above. Below we see an example of
+<a href="fitsfile/struct.NewFitsFile.html#method.with_custom_primary"><code>with_custom_primary</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::FitsFile;
+<span class="kw">use </span>fitsio::images::{ImageType, ImageDescription};
+
+<span class="comment">// let filename = ...;
+</span><span class="kw">let </span>description = ImageDescription {
+    data_type: ImageType::Double,
+    dimensions: <span class="kw-2">&amp;</span>[<span class="number">52</span>, <span class="number">103</span>],
+};
+
+<span class="kw">let </span>fptr = FitsFile::create(filename)
+    .with_custom_primary(<span class="kw-2">&amp;</span>description)
+    .open()<span class="question-mark">?</span>;</code></pre></div>
+<p>From this point, the current HDU can be queried and changed, or fits header cards can be read
+or file contents can be read.</p>
+<p>To open a fits file in read/write mode (to allow changes to the file), the
+<a href="fitsfile/struct.FitsFile.html#method.edit"><code>edit</code></a> must be used. This opens a file which already exists
+on disk for editing.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::FitsFile;
+
+<span class="comment">// let filename = ...;
+</span><span class="kw">let </span>fptr = FitsFile::edit(filename)<span class="question-mark">?</span>;</code></pre></div>
+<h3 id="pretty-printing"><a class="doc-anchor" href="#pretty-printing">§</a>Pretty printing</h3>
+<p>Fits files can be pretty-printed with <a href="fitsfile/struct.FitsFile.html#method.pretty_print"><code>pretty_print</code></a>, or its more powerful
+cousin <a href="fitsfile/struct.FitsFile.html#method.pretty_write"><code>pretty_write</code></a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::FitsFile;
+
+<span class="kw">let </span><span class="kw-2">mut </span>fptr = FitsFile::open(filename)<span class="question-mark">?</span>;
+fptr.pretty_print()<span class="question-mark">?</span>;
+<span class="comment">// or
+</span>fptr.pretty_write(<span class="kw-2">&amp;mut </span>io::stdout())<span class="question-mark">?</span>;</code></pre></div>
+<p>In the continuing tradition of releasing fits summary programs with each fits library, this
+create contains a binary program <a href="../fitssummary/index.html"><code>fitssummary</code></a> which can be installed with <code>cargo install</code>. This
+takes fits files on the command line and prints their summaries to stdout.</p>
+<div class="example-wrap"><pre class="language-sh"><code>$ fitssummary ../testdata/full_example.fits
+
+  file: ../testdata/full_example.fits
+  mode: READONLY
+  extnum hdutype      hduname    details
+  0      IMAGE_HDU               dimensions: [100, 100], type: Long
+  1      BINARY_TBL   TESTEXT    num_cols: 4, num_rows: 50
+</code></pre></div><h2 id="hdu-access"><a class="doc-anchor" href="#hdu-access">§</a>HDU access</h2>
+<p>HDU information belongs to the <a href="hdu/struct.FitsHdu.html"><code>FitsHdu</code></a> object. HDUs can be fetched by
+<code>String</code>/<code>str</code> or integer (0-indexed), with the <a href="fitsfile/struct.FitsFile.html#method.hdu"><code>hdu</code></a> method.  The <code>HduInfo</code>
+object contains information about the current HDU:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::hdu::HduInfo;
+
+<span class="kw">let </span>hdu = fptr.hdu(<span class="number">0</span>)<span class="question-mark">?</span>;
+<span class="comment">// image HDU
+</span><span class="kw">if let </span>HduInfo::ImageInfo { shape, .. } = hdu.info {
+   <span class="macro">println!</span>(<span class="string">"Image is {}-dimensional"</span>, shape.len());
+   <span class="macro">println!</span>(<span class="string">"Found image with shape {:?}"</span>, shape);
+}
+
+<span class="comment">// tables
+</span><span class="kw">if let </span>HduInfo::TableInfo { column_descriptions, num_rows, .. } = hdu.info {
+    <span class="macro">println!</span>(<span class="string">"Table contains {} rows"</span>, num_rows);
+    <span class="macro">println!</span>(<span class="string">"Table has {} columns"</span>, column_descriptions.len());
+}</code></pre></div>
+<p>The primary HDU can always be accessed with the <code>FitsFile::primary_hdu</code> method.</p>
+<h2 id="creating-new-hdus"><a class="doc-anchor" href="#creating-new-hdus">§</a>Creating new HDUs</h2><h3 id="creating-a-new-image"><a class="doc-anchor" href="#creating-a-new-image">§</a>Creating a new image</h3>
+<p>New fits images are created with the <a href="fitsfile/struct.FitsFile.html#method.create_image"><code>create_image</code></a>
+method. This method requires the extension name, and an
+<a href="images/struct.ImageDescription.html"><code>ImageDescription</code></a> object, which defines the shape and type of
+the desired image:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::images::{ImageDescription, ImageType};
+
+<span class="kw">let </span>image_description = ImageDescription {
+    data_type: ImageType::Float,
+    dimensions: <span class="kw-2">&amp;</span>[<span class="number">100</span>, <span class="number">100</span>],
+};
+<span class="kw">let </span>hdu = fptr.create_image(<span class="string">"EXTNAME"</span>.to_string(), <span class="kw-2">&amp;</span>image_description)<span class="question-mark">?</span>;</code></pre></div>
+<p><em>Unlike cfitsio, the order of the dimensions of <code>new_size</code> follows the C convention, i.e.
+<a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order">row-major order</a>.</em></p>
+<h3 id="creating-a-new-table"><a class="doc-anchor" href="#creating-a-new-table">§</a>Creating a new table</h3>
+<p>Similar to creating new images, new tables are created with the
+<a href="fitsfile/struct.FitsFile.html#method.create_table"><code>create_table</code></a> method. This requires an extension
+name, and a slice of <a href="tables/struct.ColumnDescription.html"><code>ColumnDescription</code></a>s:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::tables::{ColumnDescription, ColumnDataType};
+
+<span class="kw">let </span>first_description = ColumnDescription::new(<span class="string">"A"</span>)
+    .with_type(ColumnDataType::Int)
+    .create()<span class="question-mark">?</span>;
+<span class="kw">let </span>second_description = ColumnDescription::new(<span class="string">"B"</span>)
+    .with_type(ColumnDataType::Long)
+    .create()<span class="question-mark">?</span>;
+<span class="kw">let </span>descriptions = [first_description, second_description];
+<span class="kw">let </span>hdu = fptr.create_table(<span class="string">"EXTNAME"</span>.to_string(), <span class="kw-2">&amp;</span>descriptions)<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="column-descriptions"><a class="doc-anchor" href="#column-descriptions">§</a>Column descriptions</h4>
+<p>Columns are described with the
+<a href="tables/struct.ColumnDescription.html"><code>ColumnDescription</code></a> struct. This
+encapsulates: the name of the column, and the data format.</p>
+<p>The fits specification allows scalar or vector columns, and the data format is described the
+<a href="tables/struct.ColumnDataDescription.html"><code>ColumnDataDescription</code></a> struct, which in
+turn encapsulates the number of elements per row element (typically 1), the width of the
+column (for strings), and the data type, which is one of the
+<a href="tables/enum.ColumnDataType.html"><code>ColumnDataType</code></a> members</p>
+<p>For the common case of a scalar column, a <code>ColumnDataDescription</code> object can be constructed
+with the <code>scalar</code> method:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::tables::{ColumnDescription, ColumnDataDescription, ColumnDataType};
+
+<span class="kw">let </span>desc = ColumnDataDescription::scalar(ColumnDataType::Int);
+<span class="macro">assert_eq!</span>(desc.repeat, <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(desc.width, <span class="number">1</span>);</code></pre></div>
+<p>Vector columns can be constructed with the <code>vector</code> method:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::tables::{ColumnDataDescription, ColumnDescription, ColumnDataType};
+
+<span class="kw">let </span>desc = ColumnDataDescription::vector(ColumnDataType::Int, <span class="number">100</span>);
+<span class="macro">assert_eq!</span>(desc.repeat, <span class="number">100</span>);
+<span class="macro">assert_eq!</span>(desc.width, <span class="number">1</span>);</code></pre></div>
+<p>These impl <code>From&lt;...&gt; for String</code> such that the traditional fits column description string can
+be obtained:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::tables::{ColumnDataDescription, ColumnDescription, ColumnDataType};
+
+<span class="kw">let </span>desc = ColumnDataDescription::scalar(ColumnDataType::Int);
+<span class="macro">assert_eq!</span>(String::from(desc), <span class="string">"1J"</span>.to_string());</code></pre></div>
+<h3 id="copying-hdus-to-another-file"><a class="doc-anchor" href="#copying-hdus-to-another-file">§</a>Copying HDUs to another file</h3>
+<p>A HDU can be copied to another open file with the <a href="hdu/struct.FitsHdu.html#method.copy_to"><code>copy_to</code></a> method. This
+requires another open <a href="fitsfile/struct.FitsFile.html"><code>FitsFile</code></a> object to copy to:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>hdu.copy_to(<span class="kw-2">&amp;mut </span>src_fptr, <span class="kw-2">&amp;mut </span>dest_fptr)<span class="question-mark">?</span>;</code></pre></div>
+<h3 id="deleting-a-hdu"><a class="doc-anchor" href="#deleting-a-hdu">§</a>Deleting a HDU</h3>
+<p>The current HDU can be deleted using the <a href="hdu/struct.FitsHdu.html#method.copy_to"><code>delete</code></a> method. Note: this method
+takes ownership of <code>self</code>, and as such the <a href="hdu/struct.FitsHdu.html"><code>FitsHdu</code></a> object cannot be used after
+this is called.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// let fptr = FitsFile::open(...)?;
+// let hdu = fptr.hdu(0)?;
+</span>hdu.delete(<span class="kw-2">&amp;mut </span>fptr)<span class="question-mark">?</span>;
+<span class="comment">// Cannot use hdu after this</span></code></pre></div>
+<h3 id="iterating-over-the-hdus-in-a-file"><a class="doc-anchor" href="#iterating-over-the-hdus-in-a-file">§</a>Iterating over the HDUs in a file</h3>
+<p>The <a href="hdu/struct.FitsHdu.html#method.iter"><code>iter</code></a> method allows for iteration over the HDUs of a fits file.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">for </span>hdu <span class="kw">in </span>fptr.iter() {
+    <span class="comment">// Do something with hdu
+</span>}</code></pre></div>
+<h3 id="general-calling-behaviour"><a class="doc-anchor" href="#general-calling-behaviour">§</a>General calling behaviour</h3>
+<p>All subsequent data acess is performed through the <a href="hdu/struct.FitsHdu.html"><code>FitsHdu</code></a> object. Most methods
+take the currently open <a href="fitsfile/struct.FitsFile.html"><code>FitsFile</code></a> as the first parameter.</p>
+<h2 id="header-keys"><a class="doc-anchor" href="#header-keys">§</a>Header keys</h2>
+<p>Header keys are read through the <a href="hdu/struct.FitsHdu.html#method.read_key"><code>read_key</code></a> function,
+and is generic over types that implement the <a href="headers/trait.ReadsKey.html"><code>ReadsKey</code></a> trait:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>int_value: i64 = fptr.hdu(<span class="number">0</span>)<span class="question-mark">?</span>.read_key(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"INTTEST"</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// Alternatively
+</span><span class="kw">let </span>int_value = fptr.hdu(<span class="number">0</span>)<span class="question-mark">?</span>.read_key::&lt;i64&gt;(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"INTTEST"</span>)<span class="question-mark">?</span>;
+
+
+<span class="comment">// Or let the compiler infer the types (if possible)</span></code></pre></div>
+<p><a href="headers/struct.HeaderValue.html" title="struct fitsio::headers::HeaderValue"><code>HeaderValue</code></a> also implements the <a href="headers/trait.ReadsKey.html"><code>ReadsKey</code></a> trait, and allows the reading of comments:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>int_value_with_comment: HeaderValue&lt;i64&gt; = fptr.hdu(<span class="number">0</span>)<span class="question-mark">?</span>.read_key(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"INTTEST"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>HeaderValue { value, comment } = int_value_with_comment;</code></pre></div>
+<p>Header cards can be written through the method <a href="hdu/struct.FitsHdu.html#method.write_key"><code>write_key</code></a>.
+It takes a key name and value, or a key name and value-comment tuple.
+See the <a href="headers/trait.WritesKey.html"><code>WritesKey</code></a> trait for supported data types.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>fptr.hdu(<span class="number">0</span>)<span class="question-mark">?</span>.write_key(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"foo"</span>, <span class="number">1i64</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(fptr.hdu(<span class="number">0</span>)<span class="question-mark">?</span>.read_key::&lt;i64&gt;(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"foo"</span>)<span class="question-mark">?</span>, <span class="number">1i64</span>);
+
+<span class="comment">// with comments
+</span>fptr.hdu(<span class="number">0</span>)<span class="question-mark">?</span>.write_key(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"bar"</span>, (<span class="number">1i64</span>, <span class="string">"bar comment"</span>))<span class="question-mark">?</span>;
+
+<span class="kw">let </span>HeaderValue { value, comment } = fptr.hdu(<span class="number">0</span>)<span class="question-mark">?</span>.read_key::&lt;HeaderValue&lt;i64&gt;&gt;(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"bar"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(value, <span class="number">1i64</span>);
+<span class="macro">assert_eq!</span>(comment, <span class="prelude-val">Some</span>(<span class="string">"bar comment"</span>.to_string()));</code></pre></div>
+<h2 id="reading-file-data"><a class="doc-anchor" href="#reading-file-data">§</a>Reading file data</h2>
+<p>Methods taking ranges are exclusive of the upper range value, reflecting the nature of Rust’s
+range type.</p>
+<h3 id="reading-images"><a class="doc-anchor" href="#reading-images">§</a>Reading images</h3>
+<p>Image data can be read through either
+<a href="hdu/struct.FitsHdu.html#method.read_section"><code>read_section</code></a> which reads contiguous pixels
+between a start index and end index, or
+<a href="hdu/struct.FitsHdu.html#method.read_region"><code>read_region</code></a> which reads rectangular chunks from
+the image.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Read the first 100 pixels
+</span><span class="kw">let </span>first_row: Vec&lt;i32&gt; = hdu.read_section(<span class="kw-2">&amp;mut </span>fptr, <span class="number">0</span>, <span class="number">100</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// Read a square section of the image
+</span><span class="kw">let </span>xcoord = <span class="number">0</span>..<span class="number">10</span>;
+<span class="kw">let </span>ycoord = <span class="number">0</span>..<span class="number">10</span>;
+<span class="kw">let </span>chunk: Vec&lt;i32&gt; = hdu.read_region(<span class="kw-2">&amp;mut </span>fptr, <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>ycoord, <span class="kw-2">&amp;</span>xcoord])<span class="question-mark">?</span>;</code></pre></div>
+<p><em>Unlike cfitsio, the order of the the section ranges follows the C convention, i.e.
+<a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order">row-major order</a>.</em></p>
+<p>Some convenience methods are available for reading rows of the image. This is
+typically useful as it’s an efficient access method:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>start_row = <span class="number">0</span>;
+<span class="kw">let </span>num_rows = <span class="number">10</span>;
+<span class="kw">let </span>first_few_rows: Vec&lt;f32&gt; = hdu.read_rows(<span class="kw-2">&amp;mut </span>fptr, start_row, num_rows)<span class="question-mark">?</span>;
+
+<span class="comment">// 10 rows of 100 columns
+</span><span class="macro">assert_eq!</span>(first_few_rows.len(), <span class="number">1000</span>);</code></pre></div>
+<p>The whole image can also be read into memory:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>image_data: Vec&lt;f32&gt; = hdu.read_image(<span class="kw-2">&amp;mut </span>fptr, )<span class="question-mark">?</span>;
+
+<span class="comment">// 100 rows of 100 columns
+</span><span class="macro">assert_eq!</span>(image_data.len(), <span class="number">10_000</span>);</code></pre></div>
+<h4 id="ndarray-support"><a class="doc-anchor" href="#ndarray-support">§</a><a href="https://crates.io/crates/ndarray"><code>ndarray</code></a> support</h4>
+<p>When <code>fitsio</code> is compiled with the <code>array</code> feature, images can be read into
+the <a href="https://docs.rs/ndarray/0.11.2/ndarray/type.ArrayD.html"><code>ndarray::ArrayD</code></a> type:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::FitsFile;
+<span class="kw">use </span>ndarray::ArrayD;
+
+<span class="kw">let </span><span class="kw-2">mut </span>f = FitsFile::open(<span class="string">"../testdata/full_example.fits"</span>).unwrap();
+<span class="kw">let </span>hdu = f.primary_hdu().unwrap();
+
+<span class="kw">let </span>data: ArrayD&lt;u32&gt; = hdu.read_image(<span class="kw-2">&amp;mut </span>f).unwrap();
+<span class="kw">let </span>dim = data.dim();
+<span class="macro">assert_eq!</span>(dim[<span class="number">0</span>], <span class="number">100</span>);
+<span class="macro">assert_eq!</span>(dim[<span class="number">1</span>], <span class="number">100</span>);
+<span class="macro">assert_eq!</span>(data[[<span class="number">20</span>, <span class="number">5</span>]], <span class="number">152</span>);</code></pre></div>
+<p>For more details, see the <a href="ndarray_compat/index.html"><code>ndarray_compat</code></a> documentation (only
+available if compiled with <code>array</code> feature).</p>
+<h3 id="reading-tables"><a class="doc-anchor" href="#reading-tables">§</a>Reading tables</h3>
+<p>Columns can be read using the <a href="hdu/struct.FitsHdu.html#method.read_col"><code>read_col</code></a> function,
+which can convert data types on the fly. See the <a href="tables/trait.ReadsCol.html"><code>ReadsCol</code></a> trait for
+supported data types.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>integer_data: Vec&lt;i32&gt; = hdu.and_then(|hdu| hdu.read_col(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"intcol"</span>))<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="reading-cell-values"><a class="doc-anchor" href="#reading-cell-values">§</a>Reading cell values</h4>
+<p>Individual cell values can be read from FITS tables:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>result: i64 = tbl_hdu.read_cell_value(<span class="kw-2">&amp;mut </span>f, <span class="string">"intcol"</span>, <span class="number">4</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(result, <span class="number">16</span>);
+
+<span class="kw">let </span>result: String = tbl_hdu.read_cell_value(<span class="kw-2">&amp;mut </span>f, <span class="string">"strcol"</span>, <span class="number">4</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(result, <span class="string">"value4"</span>.to_string());</code></pre></div>
+<h4 id="reading-rows"><a class="doc-anchor" href="#reading-rows">§</a>Reading rows</h4>
+<p>Single rows can be read from a fits table with the <a href="hdu/struct.FitsHdu.html#method.row"><code>row</code></a> method. This requires
+use of the <a href="https://crates.io/crates/fitsio-derive"><code>fitsio-derive</code></a> crate.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::tables::FitsRow;
+<span class="kw">use </span>fitsio_derive::FitsRow;
+
+<span class="attr">#[derive(Default, FitsRow)]
+</span><span class="kw">struct </span>Row {
+    <span class="attr">#[fitsio(colname = <span class="string">"intcol"</span>)]
+    </span>intfoo: i32,
+    <span class="attr">#[fitsio(colname = <span class="string">"strcol"</span>)]
+    </span>foobar: String,
+}
+
+<span class="comment">// Pick the 4th row
+</span><span class="kw">let </span>row: Row = hdu.row(<span class="kw-2">&amp;mut </span>f, <span class="number">4</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(row.intfoo, <span class="number">16</span>);
+<span class="macro">assert_eq!</span>(row.foobar, <span class="string">"value4"</span>);</code></pre></div>
+<h3 id="iterating-over-columns"><a class="doc-anchor" href="#iterating-over-columns">§</a>Iterating over columns</h3>
+<p>Iterate over the columns with <a href="hdu/struct.FitsHdu.html#method.columns"><code>columns</code></a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">for </span>column <span class="kw">in </span>hdu.columns(<span class="kw-2">&amp;mut </span>fptr) {
+    <span class="comment">// Do something with column
+</span>}</code></pre></div>
+<h2 id="writing-file-data"><a class="doc-anchor" href="#writing-file-data">§</a>Writing file data</h2>
+<p>Methods taking ranges are exclusive of the upper range value, reflecting the nature of Rust’s
+range type.</p>
+<h3 id="writing-images"><a class="doc-anchor" href="#writing-images">§</a>Writing images</h3>
+<p>Image data is written through three methods on the HDU object:
+<a href="hdu/struct.FitsHdu.html#method.write_section"><code>write_section</code></a>, <a href="hdu/struct.FitsHdu.html#method.write_region"><code>write_region</code></a>, and
+<a href="hdu/struct.FitsHdu.html#method.write_image"><code>write_image</code></a>.</p>
+<p><a href="hdu/struct.FitsHdu.html#method.write_section"><code>write_section</code></a> requires a start index and
+end index and data to write. The data parameter needs to be a slice, meaning any contiguous
+memory storage method (e.g. <code>Vec</code>) can be passed.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data_to_write: Vec&lt;f64&gt; = <span class="macro">vec!</span>[<span class="number">1.0</span>, <span class="number">2.0</span>, <span class="number">3.0</span>];
+hdu.write_section(<span class="kw-2">&amp;mut </span>fptr, <span class="number">0</span>, data_to_write.len(), <span class="kw-2">&amp;</span>data_to_write)<span class="question-mark">?</span>;</code></pre></div>
+<p><a href="hdu/struct.FitsHdu.html#method.write_region"><code>write_region</code></a> takes a slice of ranges with which
+the data is to be written, and the data to write.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data_to_write: Vec&lt;f64&gt; = <span class="macro">vec!</span>[<span class="number">1.0</span>, <span class="number">2.0</span>, <span class="number">3.0</span>, <span class="number">4.0</span>];
+<span class="kw">let </span>ranges = [<span class="kw-2">&amp;</span>(<span class="number">0</span>..<span class="number">1</span>), <span class="kw-2">&amp;</span>(<span class="number">0</span>..<span class="number">1</span>)];
+hdu.write_region(<span class="kw-2">&amp;mut </span>fptr, <span class="kw-2">&amp;</span>ranges, <span class="kw-2">&amp;</span>data_to_write)<span class="question-mark">?</span>;</code></pre></div>
+<p><em>Unlike cfitsio, the order of the ranges follows the C convention, i.e.
+<a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order">row-major order</a>.</em></p>
+<p><a href="hdu/struct.FitsHdu.html#method.write_image"><code>write_image</code></a> writes all of the data passed (if possible) into the
+image. If more data is passed than pixels in the image, the method returns with an error.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Image is 3x1
+</span><span class="macro">assert!</span>(hdu.write_image(<span class="kw-2">&amp;mut </span>fptr, <span class="kw-2">&amp;</span>[<span class="number">1.0</span>, <span class="number">2.0</span>, <span class="number">3.0</span>]).is_ok());
+<span class="macro">assert!</span>(hdu.write_image(<span class="kw-2">&amp;mut </span>fptr, <span class="kw-2">&amp;</span>[<span class="number">1.0</span>, <span class="number">2.0</span>, <span class="number">3.0</span>, <span class="number">4.0</span>]).is_err());</code></pre></div>
+<h4 id="resizing-an-image"><a class="doc-anchor" href="#resizing-an-image">§</a>Resizing an image</h4>
+<p>Images can be resized to a new shape using the <a href="hdu/struct.FitsHdu.html#method.resize"><code>resize</code></a> method.</p>
+<p>The method takes the open <a href="fitsfile/struct.FitsFile.html"><code>FitsFile</code></a>, and an slice of <code>usize</code> values. Note:
+currently <code>fitsio</code> only supports slices with length 2, i.e. a 2D image.
+<a href="hdu/struct.FitsHdu.html#method.resize"><code>resize</code></a> takes ownership <code>self</code> to force the user to fetch the HDU object
+again. This ensures the image changes are reflected in the hew HDU object.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::hdu::HduInfo;
+
+hdu.resize(<span class="kw-2">&amp;mut </span>fptr, <span class="kw-2">&amp;</span>[<span class="number">1024</span>, <span class="number">1024</span>])<span class="question-mark">?</span>;
+
+<span class="comment">// Have to get the HDU again, to reflect the latest changes
+</span><span class="kw">let </span>hdu = fptr.hdu(<span class="number">0</span>)<span class="question-mark">?</span>;
+<span class="kw">match </span>hdu.info {
+    HduInfo::ImageInfo { shape, .. } =&gt; {
+        <span class="macro">assert_eq!</span>(shape, [<span class="number">1024</span>, <span class="number">1024</span>]);
+    }
+    <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">"Unexpected hdu type"</span>),
+}</code></pre></div>
+<p><em>Unlike cfitsio, the order of the dimensions of <code>new_size</code> follows the C convention, i.e.
+<a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order">row-major order</a>.</em></p>
+<h3 id="writing-tables"><a class="doc-anchor" href="#writing-tables">§</a>Writing tables</h3><h4 id="writing-table-data"><a class="doc-anchor" href="#writing-table-data">§</a>Writing table data</h4>
+<p>Tablular data can either be written with <a href="hdu/struct.FitsHdu.html#method.write_col"><code>write_col</code></a> or
+<a href="hdu/struct.FitsHdu.html#method.write_col_range"><code>write_col_range</code></a>.</p>
+<p><a href="hdu/struct.FitsHdu.html#method.write_col"><code>write_col</code></a> writes an entire column’s worth of data to the file. It does
+not check how many rows are in the file, but extends the table if the length of data is longer
+than the table length.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data_to_write: Vec&lt;i32&gt; = <span class="macro">vec!</span>[<span class="number">10101</span>; <span class="number">5</span>];
+hdu.write_col(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"bar"</span>, <span class="kw-2">&amp;</span>data_to_write)<span class="question-mark">?</span>;
+<span class="kw">let </span>data: Vec&lt;i32&gt; = hdu.read_col(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"bar"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(data, <span class="macro">vec!</span>[<span class="number">10101</span>, <span class="number">10101</span>, <span class="number">10101</span>, <span class="number">10101</span>, <span class="number">10101</span>]);</code></pre></div>
+<p><a href="hdu/struct.FitsHdu.html#method.write_col_range"><code>write_col_range</code></a> writes data to a range of rows in a table. The
+range is inclusive of both the upper and lower bounds, so <code>0..4</code> writes 5 elements.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data_to_write: Vec&lt;i32&gt; = <span class="macro">vec!</span>[<span class="number">10101</span>; <span class="number">10</span>];
+hdu.write_col_range(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"bar"</span>, <span class="kw-2">&amp;</span>data_to_write, <span class="kw-2">&amp;</span>(<span class="number">0</span>..<span class="number">5</span>))<span class="question-mark">?</span>;
+<span class="kw">let </span>data: Vec&lt;i32&gt; = hdu.read_col(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"bar"</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(data, <span class="macro">vec!</span>[<span class="number">10101</span>, <span class="number">10101</span>, <span class="number">10101</span>, <span class="number">10101</span>, <span class="number">10101</span>]);</code></pre></div>
+<h4 id="inserting-columns"><a class="doc-anchor" href="#inserting-columns">§</a>Inserting columns</h4>
+<p>Two methods on the HDU object allow for adding new columns:
+<a href="hdu/struct.FitsHdu.html#method.append_column"><code>append_column</code></a>
+and <a href="hdu/struct.FitsHdu.html#method.insert_column"><code>insert_column</code></a>.
+<a href="hdu/struct.FitsHdu.html#method.append_column"><code>append_column</code></a> adds a new column as the last column member, and is
+generally
+preferred as it does not require shifting of data within the file.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::tables::{ColumnDescription, ColumnDataType};
+
+<span class="kw">let </span>column_description = ColumnDescription::new(<span class="string">"abcdefg"</span>)
+    .with_type(ColumnDataType::Int)
+    .create()<span class="question-mark">?</span>;
+hdu.append_column(<span class="kw-2">&amp;mut </span>fptr, <span class="kw-2">&amp;</span>column_description)<span class="question-mark">?</span>;</code></pre></div>
+<h4 id="deleting-columns"><a class="doc-anchor" href="#deleting-columns">§</a>Deleting columns</h4>
+<p>The HDU object has the method <a href="hdu/struct.FitsHdu.html#method.delete_column"><code>delete_column</code></a> which removes a column.
+The column can either be accessed by integer or name</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>newhdu = hdu.delete_column(<span class="kw-2">&amp;mut </span>fptr, <span class="string">"bar"</span>)<span class="question-mark">?</span>;
+<span class="comment">// or
+</span><span class="kw">let </span>newhdu = hdu.delete_column(<span class="kw-2">&amp;mut </span>fptr, <span class="number">0</span>)<span class="question-mark">?</span>;</code></pre></div>
+<h2 id="raw-fits-file-access"><a class="doc-anchor" href="#raw-fits-file-access">§</a>Raw fits file access</h2><h3 id="converting-a-fitsfile-to-a-raw-fitsio_sysfitsfile-pointer"><a class="doc-anchor" href="#converting-a-fitsfile-to-a-raw-fitsio_sysfitsfile-pointer">§</a>Converting a <code>FitsFile</code> to a raw <code>fitsio_sys::fitsfile</code> pointer</h3>
+<p>If this library does not support the particular use case that is needed, the raw <code>fitsfile</code>
+pointer can be accessed:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::FitsFile;
+
+<span class="kw">let </span><span class="kw-2">mut </span>fptr = FitsFile::open(filename)<span class="question-mark">?</span>;
+
+<span class="comment">/* Find out the number of HDUs in the file */
+</span><span class="kw">let </span><span class="kw-2">mut </span>num_hdus = <span class="number">0</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>status = <span class="number">0</span>;
+
+<span class="kw">unsafe </span>{
+    <span class="kw">let </span>fitsfile = fptr.as_raw();
+
+    <span class="comment">/* Use the unsafe fitsio-sys low level library to call a function that is possibly not
+    implemented in this crate */
+    </span>fitsio_sys::ffthdu(fitsfile, <span class="kw-2">&amp;mut </span>num_hdus, <span class="kw-2">&amp;mut </span>status);
+}
+<span class="macro">assert_eq!</span>(num_hdus, <span class="number">2</span>);</code></pre></div>
+<p>This (unsafe) pointer can then be used with the underlying <a href="https://crates.io/crates/fitsio-sys"><code>fitsio-sys</code></a> library directly.</p>
+<h3 id="creating-a-fitsfile-from-a-raw-fitsio_sysfitsfile-pointer"><a class="doc-anchor" href="#creating-a-fitsfile-from-a-raw-fitsio_sysfitsfile-pointer">§</a>Creating a <code>FitsFile</code> from a raw <code>fitsio_sys::fitsfile</code> pointer</h3>
+<p>The inverse of the process described above can be performed. Note: calling this <a href="struct.FitsFile.html" title="struct fitsio::FitsFile"><code>FitsFile</code></a>
+constructor is <em>unsafe</em> =&gt; it is up to the caller to guarantee that the pointer given was</p>
+<ol>
+<li>created by <code>cfitsio</code> (or <a href="../fitsio_sys/index.html" title="mod fitsio_sys"><code>fitsio_sys</code></a>), and</li>
+<li>it represents a valid FITS file.</li>
+</ol>
+<p>Given these two things, a <a href="struct.FitsFile.html" title="struct fitsio::FitsFile"><code>FitsFile</code></a> can be created.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fitsio::{sys::ffopen, FileOpenMode, FitsFile};
+
+<span class="kw">let </span>filename = <span class="string">"../testdata/full_example.fits"</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>fptr = std::ptr::null_mut();
+<span class="kw">let </span><span class="kw-2">mut </span>status = <span class="number">0</span>;
+<span class="kw">let </span>c_filename = std::ffi::CString::new(filename).expect(<span class="string">"filename is not a valid C-string"</span>);
+
+<span class="kw">unsafe </span>{
+    ffopen(
+        <span class="kw-2">&amp;mut </span>fptr <span class="kw">as </span><span class="kw-2">*mut *mut </span><span class="kw">_</span>,
+        c_filename.as_ptr(),
+        <span class="number">0</span>, <span class="comment">// readonly
+        </span><span class="kw-2">&amp;mut </span>status,
+    );
+}
+<span class="macro">assert_eq!</span>(status, <span class="number">0</span>);
+
+<span class="kw">let </span><span class="kw-2">mut </span>f = <span class="kw">unsafe </span>{ FitsFile::from_raw(fptr, FileOpenMode::READONLY) }.unwrap();</code></pre></div>
+<h2 id="threadsafe-access"><a class="doc-anchor" href="#threadsafe-access">§</a>Threadsafe access</h2>
+<p>Access to a <a href="fitsfile/struct.FitsFile.html"><code>FitsFile</code></a> is not threadsafe. Behind the scenes, fetching a
+<a href="hdu/struct.FitsHdu.html"><code>FitsHdu</code></a> changes internal state, and <code>fitsio</code> does not provide any concurrent access
+gauruntees. Therefore, a <a href="fitsfile/struct.FitsFile.html"><code>FitsFile</code></a> does not implement <code>Send</code> or <code>Sync</code>.</p>
+<p>In order to allow for threadsafe access, the <a href="fitsfile/struct.FitsFile.html"><code>FitsFile</code></a> struct has a
+<a href="fitsfile/struct.FitsFile.html#method.threadsafe"><code>threadsafe</code></a> method, which returns a threadsafe
+<a href="threadsafe_fitsfile/struct.ThreadsafeFitsFile.html"><code>ThreadsafeFitsFile</code></a> struct (a tuple-type wrapper around
+<code>Arc&lt;Mutex&lt;FitsFile&gt;&gt;</code>) which can be shared between threads safely.</p>
+<p>The same concerns with <code>Arc&lt;Mutex&lt;T&gt;&gt;</code> data should be applied here. Additionally, the library is
+subject to OS level limits, such as the maximum number of open files.</p>
+<h3 id="example"><a class="doc-anchor" href="#example">§</a>Example</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>f = fptr.threadsafe();
+
+<span class="comment">/* Spawn loads of threads... */
+</span><span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">100 </span>{
+<span class="kw">let </span><span class="kw-2">mut </span>f1 = f.clone();
+
+<span class="comment">/* Send the cloned ThreadsafeFitsFile to another thread */
+</span><span class="kw">let </span>handle = thread::spawn(<span class="kw">move </span>|| {
+<span class="comment">/* Get the underlyng fits file back */
+</span><span class="kw">let </span><span class="kw-2">mut </span>t = f1.lock().unwrap();
+
+<span class="comment">/* Fetch a different HDU per thread */
+</span><span class="kw">let </span>hdu_num = i % <span class="number">2</span>;
+<span class="kw">let </span>_hdu = t.hdu(hdu_num).unwrap();
+});
+}</code></pre></div>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.HeaderValue"><code>pub use crate::headers::<a class="struct" href="headers/struct.HeaderValue.html" title="struct fitsio::headers::HeaderValue">HeaderValue</a>;</code></div></li><li><div class="item-name" id="reexport.sys"><code>pub use <a class="mod" href="../fitsio_sys/index.html" title="mod fitsio_sys">fitsio_sys</a> as sys;</code></div></li></ul><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="errors/index.html" title="mod fitsio::errors">errors</a></div><div class="desc docblock-short">Errors and error handling</div></li><li><div class="item-name"><a class="mod" href="hdu/index.html" title="mod fitsio::hdu">hdu</a></div><div class="desc docblock-short">Fits HDU related code</div></li><li><div class="item-name"><a class="mod" href="headers/index.html" title="mod fitsio::headers">headers</a></div><div class="desc docblock-short">Header-related code</div></li><li><div class="item-name"><a class="mod" href="images/index.html" title="mod fitsio::images">images</a></div><div class="desc docblock-short">Image related code</div></li><li><div class="item-name"><a class="mod" href="tables/index.html" title="mod fitsio::tables">tables</a></div><div class="desc docblock-short">Table-related code</div></li><li><div class="item-name"><a class="mod" href="threadsafe_fitsfile/index.html" title="mod fitsio::threadsafe_fitsfile">threadsafe_<wbr>fitsfile</a></div><div class="desc docblock-short">Thread-safe FitsFile struct</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.CfitsioVersion.html" title="struct fitsio::CfitsioVersion">Cfitsio<wbr>Version</a></div><div class="desc docblock-short">Representation of the version of cfitsio used within bindings</div></li><li><div class="item-name"><a class="struct" href="struct.FitsFile.html" title="struct fitsio::FitsFile">Fits<wbr>File</a></div><div class="desc docblock-short">Main entry point to the FITS file format</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.FileOpenMode.html" title="enum fitsio::FileOpenMode">File<wbr>Open<wbr>Mode</a></div><div class="desc docblock-short">Enumeration of file open modes</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.cfitsio_version.html" title="fn fitsio::cfitsio_version">cfitsio_<wbr>version</a></div></li></ul></section></div></main></body></html>
